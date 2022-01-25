@@ -20,13 +20,17 @@ export class Source extends BaseSource<Params> {
       async start(controller) {
         const items = await args.denops.eval(
           `luaeval("require'lsp_ddu'.references()")`,
-        ) as { col: number; lnum: number; filename: string }[];
+        ) as { col: number; lnum: number; filename: string }[] | null;
+        if (items === null) {
+          return controller.close();
+        }
         controller.enqueue(items.map((item, _) => {
           return {
             word: item["filename"],
             action: {
-              path: item["filename"],
-              lineNr: item["lnum"],
+              path: item.filename,
+              lineNr: item.lnum,
+              col: item.col,
             },
           };
         }));

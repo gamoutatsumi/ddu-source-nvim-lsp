@@ -4,7 +4,7 @@ local M = {}
 
 local function get_available_client(method)
   for id, client in pairs(lsp.buf_get_clients()) do
-    if not vim.tbl_isempty(client['resolved_capabilities'][method]) then
+    if client['resolved_capabilities'][method] ~= nil then
       return id
     end
   end
@@ -15,10 +15,10 @@ function M.references()
   local params = lsp.util.make_position_params()
   params.context = { includeDeclaration = true }
 
-  local results_lsp = lsp.buf_request_sync(0, "textDocument/references", params, 10000)
+  local results_lsp = lsp.buf_request_sync(0, "textDocument/references", params, 1000)
   local locations = {}
   for _, server_results in pairs(results_lsp) do
-    if server_results.result then
+    if server_results.result ~= nil then
       vim.list_extend(locations, lsp.util.locations_to_items(server_results.result) or {})
     end
   end
@@ -42,7 +42,8 @@ function M.document_symbol()
 end
 
 function M.workspace_symbol(query)
-  local raw_result = lsp.buf_request_sync(0, 'workspace/symbol', {query=query}, 1000)
+  local params = { workspace = lsp.util.make_workspace_params(), query = query }
+  local raw_result = lsp.buf_request_sync(0, 'workspace/symbol', params, 1000)
   local client_id = get_available_client('workspace_symbol')
   if client_id == 0 or raw_result == nil then
     return nil
