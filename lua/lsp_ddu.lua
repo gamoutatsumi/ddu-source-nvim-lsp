@@ -4,7 +4,7 @@ local M = {}
 
 local function get_available_client(method)
   for id, client in pairs(lsp.buf_get_clients()) do
-    if client['resolved_capabilities'][method] == true then
+    if not vim.tbl_isempty(client['resolved_capabilities'][method]) then
       return id
     end
   end

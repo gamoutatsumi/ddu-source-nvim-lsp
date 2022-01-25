@@ -8,13 +8,6 @@ import { ActionData } from "https://deno.land/x/ddu_kind_file@v0.1.0/file.ts#^";
 
 type Params = Record<never, never>;
 
-enum TYPE_DIAGNOSTICS {
-  "Error",
-  "Warning",
-  "Information",
-  "Hint",
-}
-
 export class Source extends BaseSource<Params> {
   kind = "file";
 
@@ -26,29 +19,28 @@ export class Source extends BaseSource<Params> {
     return new ReadableStream({
       async start(controller) {
         const items = await args.denops.eval(
-          `luaeval("require'lsp_ddu'.diagnostic_all()")`,
+          `luaeval("require'lsp_ddu'.document_symbol()")`,
         ) as {
-          lnum: number;
+          filename: string;
           col: number;
-          bufnr: number;
-          severity: number;
-          message: string;
+          lnum: number;
+          text: string;
         }[] | null;
         if (items === null) {
           return controller.close();
         }
         controller.enqueue(
           await Promise.all(items.map(async (item, _) => {
-            const bufname = await fn.bufname(args.denops, item.bufnr);
             return {
-              word: `${bufname}:${item.lnum}:${item.col} ${item.message} [${
-                TYPE_DIAGNOSTICS[item.severity]
-              }]`,
+              word: item.text,
+              abbr: `${item.lnum}:${item.col} ${item.text} ${await fn.getline(
+                args.denops,
+                item.lnum,
+              )}`,
               action: {
-                path: bufname,
-                lineNr: item.lnum + 1,
-                col: item.col + 1,
-                type: TYPE_DIAGNOSTICS[item.severity],
+                path: item.filename,
+                lineNr: item.lnum,
+                col: item.col,
               },
             };
           })),

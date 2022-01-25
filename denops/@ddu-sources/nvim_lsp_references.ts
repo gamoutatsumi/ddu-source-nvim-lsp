@@ -26,7 +26,7 @@ export class Source extends BaseSource<Params> {
             word: item["filename"],
             action: {
               path: item["filename"],
-              lnum: item["lnum"],
+              lineNr: item["lnum"],
             },
           };
         }));
