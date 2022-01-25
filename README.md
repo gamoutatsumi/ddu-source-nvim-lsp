@@ -1,5 +1,7 @@
 # ddu-source-nvim-lsp
 
+**UNDER THE DEVELOPMENT**
+
 [ddu.vim](https://github.com/Shougo/ddu.vim) source for Neovim builtin LSP.
 
 ## sources
