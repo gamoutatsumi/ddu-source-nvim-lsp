@@ -2,8 +2,8 @@ import {
   BaseSource,
   Context,
   Item,
-} from "https://deno.land/x/ddu_vim@v0.1.0/types.ts#^";
-import { Denops } from "https://deno.land/x/ddu_vim@v0.1.0/deps.ts#^";
+} from "https://deno.land/x/ddu_vim@v0.4.0/types.ts#^";
+import { Denops } from "https://deno.land/x/ddu_vim@v0.4.0/deps.ts#^";
 import { ActionData } from "https://deno.land/x/ddu_kind_file@v0.1.0/file.ts#^";
 
 type Params = Record<never, never>;
