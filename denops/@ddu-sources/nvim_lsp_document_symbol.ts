@@ -2,9 +2,9 @@ import {
   BaseSource,
   Context,
   Item,
-} from "https://deno.land/x/ddu_vim@v0.4.0/types.ts#^";
-import { Denops, fn } from "https://deno.land/x/ddu_vim@v0.4.0/deps.ts#^";
-import { ActionData } from "https://deno.land/x/ddu_kind_file@v0.1.0/file.ts#^";
+} from "https://deno.land/x/ddu_vim@v0.12.2/types.ts#^";
+import { Denops } from "https://deno.land/x/ddu_vim@v0.12.2/deps.ts#^";
+import { ActionData } from "https://deno.land/x/ddu_kind_file@v0.2.0/file.ts#^";
 
 type Params = Record<never, never>;
 
@@ -18,7 +18,7 @@ export class Source extends BaseSource<Params> {
   }): ReadableStream<Item<ActionData>[]> {
     return new ReadableStream({
       async start(controller) {
-        const items = await args.denops.eval(
+        const res = await args.denops.eval(
           `luaeval("require'lsp_ddu'.document_symbol()")`,
         ) as {
           filename: string;
@@ -26,24 +26,25 @@ export class Source extends BaseSource<Params> {
           lnum: number;
           text: string;
         }[] | null;
-        if (items === null) {
+        if (res === null) {
           return controller.close();
         }
-        controller.enqueue(
-          await Promise.all(items.map(async (item, _) => {
-            return {
+        const tree = async () => {
+          const items: Item<ActionData>[] = [];
+          for await (const item of res) {
+            items.push({
               word: item.text,
-              abbr: `${item.lnum}:${item.col} ${item.text} ${await fn.getline(
-                args.denops,
-                item.lnum,
-              )}`,
               action: {
                 path: item.filename,
                 lineNr: item.lnum,
                 col: item.col,
               },
-            };
-          })),
+            });
+          }
+          return items;
+        };
+        controller.enqueue(
+          await tree(),
         );
       },
     });

@@ -2,9 +2,9 @@ import {
   BaseSource,
   Context,
   Item,
-} from "https://deno.land/x/ddu_vim@v0.4.0/types.ts#^";
-import { Denops } from "https://deno.land/x/ddu_vim@v0.4.0/deps.ts#^";
-import { ActionData } from "https://deno.land/x/ddu_kind_file@v0.1.0/file.ts#^";
+} from "https://deno.land/x/ddu_vim@v0.12.2/types.ts#^";
+import { Denops } from "https://deno.land/x/ddu_vim@v0.12.2/deps.ts#^";
+import { ActionData } from "https://deno.land/x/ddu_kind_file@v0.2.0/file.ts#^";
 
 type Params = Record<never, never>;
 
@@ -18,22 +18,27 @@ export class Source extends BaseSource<Params> {
   }): ReadableStream<Item<ActionData>[]> {
     return new ReadableStream({
       async start(controller) {
-        const items = await args.denops.eval(
+        const res = await args.denops.eval(
           `luaeval("require'lsp_ddu'.references()")`,
         ) as { col: number; lnum: number; filename: string }[] | null;
-        if (items === null) {
+        if (res === null) {
           return controller.close();
         }
-        controller.enqueue(items.map((item, _) => {
-          return {
-            word: item["filename"],
-            action: {
-              path: item.filename,
-              lineNr: item.lnum,
-              col: item.col,
-            },
-          };
-        }));
+        const tree = async () => {
+          const items: Item<ActionData>[] = [];
+          for await (const item of res) {
+            items.push({
+              word: item["filename"],
+              action: {
+                path: item.filename,
+                lineNr: item.lnum,
+                col: item.col,
+              },
+            });
+          }
+          return items;
+        };
+        controller.enqueue(await tree());
       },
     });
   }

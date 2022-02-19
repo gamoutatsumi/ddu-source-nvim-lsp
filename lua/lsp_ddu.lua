@@ -22,7 +22,7 @@ function M.references()
       vim.list_extend(locations, lsp.util.locations_to_items(server_results.result) or {})
     end
   end
-  
+
   if vim.tbl_isempty(locations) then
     return nil
   end

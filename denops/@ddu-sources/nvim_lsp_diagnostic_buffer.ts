@@ -2,9 +2,9 @@ import {
   BaseSource,
   Context,
   Item,
-} from "https://deno.land/x/ddu_vim@v0.4.0/types.ts#^";
-import { Denops, fn } from "https://deno.land/x/ddu_vim@v0.4.0/deps.ts#^";
-import { ActionData } from "https://deno.land/x/ddu_kind_file@v0.1.0/file.ts#^";
+} from "https://deno.land/x/ddu_vim@v0.12.2/types.ts#^";
+import { Denops, fn } from "https://deno.land/x/ddu_vim@v0.12.2/deps.ts#^";
+import { ActionData } from "https://deno.land/x/ddu_kind_file@v0.2.0/file.ts#^";
 
 type Params = Record<never, never>;
 
@@ -13,6 +13,13 @@ enum TYPE_DIAGNOSTICS {
   "Warning",
   "Information",
   "Hint",
+}
+
+enum HIGHLIGHT_DIAGNOSTICS {
+  "DiagnosticError",
+  "DiagnosticWarn",
+  "DiagnosticInfo",
+  "DiagnosticHint",
 }
 
 export class Source extends BaseSource<Params> {
@@ -25,7 +32,7 @@ export class Source extends BaseSource<Params> {
   }): ReadableStream<Item<ActionData>[]> {
     return new ReadableStream({
       async start(controller) {
-        const items = await args.denops.eval(
+        const res = await args.denops.eval(
           `luaeval("require'lsp_ddu'.diagnostic_buffer()")`,
         ) as {
           lnum: number;
@@ -34,23 +41,36 @@ export class Source extends BaseSource<Params> {
           severity: number;
           message: string;
         }[] | null;
-        if (items === null) {
+        if (res === null) {
           return controller.close();
         }
-        controller.enqueue(
-          await Promise.all(items.map(async (item, _) => {
-            const filename = await fn.bufname(args.denops, item.bufnr);
-            return {
-              word: `${TYPE_DIAGNOSTICS[item.severity][0]} ${filename}:${item.lnum}:${item.col} ${item.message}`,
+        const tree = async () => {
+          const items: Item<ActionData>[] = [];
+          for await (const item of res) {
+            const bufname = await fn.bufname(args.denops, item.bufnr);
+            const word =
+              `${bufname}:${item.lnum}:${item.col} ${item.message} [${
+                TYPE_DIAGNOSTICS[item.severity]
+              }]`;
+            items.push({
+              word: word,
+              highlights: [{
+                name: TYPE_DIAGNOSTICS[item.severity],
+                "hl_group": HIGHLIGHT_DIAGNOSTICS[item.severity],
+                col: 1,
+                width: word.length,
+              }],
               action: {
-                path: filename,
-                lnum: item.lnum + 1,
+                path: bufname,
+                lineNr: item.lnum + 1,
                 col: item.col + 1,
-                type: TYPE_DIAGNOSTICS[item.severity],
               },
-            };
-          })),
-        );
+            });
+          }
+          return items;
+        };
+        controller.enqueue(await tree());
+        controller.close();
       },
     });
   }
