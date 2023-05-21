@@ -33,7 +33,7 @@ export class Source extends BaseSource<Params> {
               action: {
                 path: item.filename,
                 lineNr: item.lnum,
-                col: item.col,
+                col: item.col + 1,
               },
             });
           }
