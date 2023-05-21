@@ -2,9 +2,9 @@ import {
   BaseSource,
   Context,
   Item,
-} from "https://deno.land/x/ddu_vim@v0.12.2/types.ts#^";
-import { Denops } from "https://deno.land/x/ddu_vim@v0.12.2/deps.ts#^";
-import { ActionData } from "https://deno.land/x/ddu_kind_file@v0.2.0/file.ts#^";
+} from "https://deno.land/x/ddu_vim@v2.8.4/types.ts#^";
+import { Denops } from "https://deno.land/x/ddu_vim@v2.8.4/deps.ts#^";
+import { ActionData } from "https://deno.land/x/ddu_kind_file@v0.4.0/file.ts";
 
 type Params = Record<never, never>;
 
@@ -14,12 +14,13 @@ export class Source extends BaseSource<Params> {
   gather(args: {
     denops: Denops;
     context: Context;
-    sourceParams: Params;
   }): ReadableStream<Item<ActionData>[]> {
+    const { denops, context } = args;
+
     return new ReadableStream({
       async start(controller) {
-        const res = await args.denops.eval(
-          `luaeval("require'lsp_ddu'.references()")`,
+        const res = await denops.eval(
+          `luaeval("require'lsp_ddu'.references(${context.bufNr}, ${context.winId})")`,
         ) as { col: number; lnum: number; filename: string }[] | null;
         if (res === null) {
           return controller.close();
@@ -32,7 +33,7 @@ export class Source extends BaseSource<Params> {
               action: {
                 path: item.filename,
                 lineNr: item.lnum,
-                col: item.col,
+                col: item.col + 1,
               },
             });
           }
