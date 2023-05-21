@@ -11,15 +11,15 @@ local function get_available_client(method)
   return 0
 end
 
-function M.references()
-  local params = lsp.util.make_position_params()
+function M.references(bufNr, winId)
+  local params = lsp.util.make_position_params(winId)
   params.context = { includeDeclaration = true }
 
-  local results_lsp = lsp.buf_request_sync(0, "textDocument/references", params, 1000)
+  local results_lsp = lsp.buf_request_sync(bufNr, 'textDocument/references', params, 1000)
   local locations = {}
-  for _, server_results in pairs(results_lsp) do
+  for _, server_results in pairs(results_lsp or {}) do
     if server_results.result ~= nil then
-      vim.list_extend(locations, lsp.util.locations_to_items(server_results.result) or {})
+      vim.list_extend(locations, lsp.util.locations_to_items(server_results.result, "utf-8") or {})
     end
   end
 

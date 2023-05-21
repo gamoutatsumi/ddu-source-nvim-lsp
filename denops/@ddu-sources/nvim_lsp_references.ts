@@ -14,12 +14,13 @@ export class Source extends BaseSource<Params> {
   gather(args: {
     denops: Denops;
     context: Context;
-    sourceParams: Params;
   }): ReadableStream<Item<ActionData>[]> {
+    const { denops, context } = args;
+
     return new ReadableStream({
       async start(controller) {
-        const res = await args.denops.eval(
-          `luaeval("require'lsp_ddu'.references()")`,
+        const res = await denops.eval(
+          `luaeval("require'lsp_ddu'.references(${context.bufNr}, ${context.winId})")`,
         ) as { col: number; lnum: number; filename: string }[] | null;
         if (res === null) {
           return controller.close();
