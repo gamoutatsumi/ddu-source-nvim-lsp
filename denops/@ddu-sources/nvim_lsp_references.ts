@@ -25,21 +25,21 @@ export class Source extends BaseSource<Params> {
         if (res === null) {
           return controller.close();
         }
-        const tree = async () => {
-          const items: Item<ActionData>[] = [];
-          for await (const item of res) {
-            items.push({
-              word: item["filename"],
-              action: {
-                path: item.filename,
-                lineNr: item.lnum,
-                col: item.col + 1,
-              },
-            });
-          }
-          return items;
-        };
-        controller.enqueue(await tree());
+        const items = res.map((item) => {
+          const { filename: path, lnum: lineNr } = item;
+          const col = item.col + 1;
+          return {
+            word: path,
+            display: `${path}:${lineNr}:${col}`,
+            action: {
+              path,
+              lineNr,
+              col,
+            },
+          };
+        });
+        controller.enqueue(items);
+        controller.close()
       },
     });
   }
