@@ -33,7 +33,7 @@ export class Source extends BaseSource<Params> {
           };
         });
         controller.enqueue(items);
-        controller.close()
+        controller.close();
       },
     });
   }
