@@ -1,10 +1,4 @@
-import {
-  BaseSource,
-  Context,
-  Item,
-} from "https://deno.land/x/ddu_vim@v0.12.2/types.ts#^";
-import { Denops, fn } from "https://deno.land/x/ddu_vim@v0.12.2/deps.ts#^";
-import { ActionData } from "https://deno.land/x/ddu_kind_file@v0.2.0/file.ts#^";
+import { ActionData, BaseSource, Context, Denops, fn, Item } from "./deps.ts";
 
 type Params = {
   path: string;
